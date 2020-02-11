@@ -1,36 +1,43 @@
-import {
-    Application,
-    Sprite
-} from 'pixi.js';
+// Import Application class that is the main part of our PIXI project
+import { Application } from "@pixi/app";
 
-// The application will create a renderer using WebGL, if possible,
-// with a fallback to a canvas render. It will also setup the ticker
-// and the root stage PIXI.Container
-const app = new Application();
+// In order that PIXI could render things we need to register appropriate plugins
+import { Renderer } from "@pixi/core"; // Renderer is the class that is going to register plugins
 
-// The application will create a canvas element for you that you
-// can then insert into the DOM
-document.body.appendChild(app.view);
+import { BatchRenderer } from "@pixi/core"; // BatchRenderer is the "plugin" for drawing sprites
+Renderer.registerPlugin("batch", BatchRenderer);
 
-// load the texture we need
-app.loader.add('bunny', 'https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fi.pinimg.com%2Foriginals%2Fa2%2Fa1%2F63%2Fa2a16304eedebaab706f1cd7b6eb934e.png&f=1&nofb=1').load((loader, resources) => {
-    // This creates a texture from a 'bunny.png' image
-    const bunny = new Sprite(resources.bunny.texture);
+import { TickerPlugin } from "@pixi/ticker"; // TickerPlugin is the plugin for running an update loop (it's for the application class)
+Application.registerPlugin(TickerPlugin);
 
-    // Setup the position of the bunny
-    bunny.x = app.renderer.width / 2;
-    bunny.y = app.renderer.height / 2;
+// And just for convenience let's register Loader plugin in order to use it right from Application instance like app.loader.add(..) etc.
+import { AppLoaderPlugin } from "@pixi/loaders";
+Application.registerPlugin(AppLoaderPlugin);
 
-    // Rotate around the center
-    bunny.anchor.x = 0.5;
-    bunny.anchor.y = 0.5;
+// Sprite is our image on the stage
+import { Sprite } from "@pixi/sprite";
 
-    // Add the bunny to the scene we are building
-    app.stage.addChild(bunny);
+// App with width and height of the page
+const app = new Application({
+  width: window.innerWidth,
+  height: window.innerHeight,
+  resolution: window.devicePixelRatio // For good rendering on mobiles
+});
+document.body.appendChild(app.view); // Create Canvas tag in the body
 
-    // Listen for frame updates
-    app.ticker.add(() => {
-        // each frame we spin the bunny around a bit
-        bunny.rotation += 0.01;
-    });
+// Load the logo
+app.loader.add("bunny", "./assets/bunny.png");
+app.loader.load(() => {
+  const sprite = Sprite.from("bunny");
+  sprite.anchor.set(0.5); // We want to rotate our sprite relative to the center, so 0.5
+  app.stage.addChild(sprite);
+
+  // Position the sprite at the center of the stage
+  sprite.x = app.screen.width * 0.5;
+  sprite.y = app.screen.height * 0.5;
+
+  // Put the rotating function into the update loop
+  app.ticker.add(delta => {
+    sprite.rotation += 0.02 * delta;
+  });
 });
